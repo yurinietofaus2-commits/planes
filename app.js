@@ -215,7 +215,7 @@
   function filaLink(valor = '') {
     const row = document.createElement('div');
     row.className = 'row';
-    row.innerHTML = `<input type="url" inputmode="url" placeholder="https://…" value="${esc(valor)}">
+    row.innerHTML = `<input type="text" inputmode="url" placeholder="https://…" value="${esc(valor)}">
       <button type="button" class="iconbtn" aria-label="Quitar enlace"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
     row.querySelector('button').onclick = () => row.remove();
     $('#links').appendChild(row);
