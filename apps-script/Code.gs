@@ -5,8 +5,8 @@
  */
 const SHEET_ID = '1wCANuHk3XOe82WimgyrtTbhEKKKeaomsKRY_aTmf4h0';
 const HOJA = 'Planes';
-const CLAVE = 'TU_CLAVE'; // la real está solo en el proyecto de Apps Script // la misma que se escribe en la web la primera vez
-const COLS = ['id', 'titulo', 'descripcion', 'links', 'fecha', 'presupuesto', 'total', 'actualizado'];
+const CLAVE = 'TU_CLAVE'; // la real está solo en el proyecto de Apps Script
+const COLS = ['id', 'titulo', 'descripcion', 'links', 'fecha', 'presupuesto', 'total', 'actualizado', 'participantes'];
 
 function doGet(e) {
   return responder(e && e.parameter ? e.parameter : {});
@@ -59,7 +59,8 @@ function filaAPlan(f) {
     links: f[3] ? f[3].split('\n').map(s => s.trim()).filter(Boolean) : [],
     fecha: f[4],
     presupuesto: textoAPresupuesto(f[5]),
-    actualizado: f[7]
+    actualizado: f[7],
+    participantes: f[8] ? f[8].split('\n').map(s => s.trim()).filter(Boolean) : []
   };
 }
 
@@ -97,7 +98,8 @@ function guardar(hoja, plan) {
     fecha,
     presupuestoATexto(presupuesto),
     presupuesto.length ? total : '',
-    ahora
+    ahora,
+    (plan.participantes || []).map(s => String(s).replace(/\n/g, ' ').trim()).filter(Boolean).join('\n')
   ];
 
   const r = buscarFila(hoja, id);
