@@ -226,7 +226,8 @@
   }
   function ubicacionEvento(p) {
     const t = String(p.parking || '').trim();
-    return esUrl(t) ? normalizaUrl(t) : 'Parking: ' + t;
+    if (esUrl(t)) return normalizaUrl(t);
+    return /parking|aparcamiento/i.test(t) ? t : 'Parking: ' + t;
   }
   function urlGoogle(p) {
     const [a, b] = rangoDia(p);
