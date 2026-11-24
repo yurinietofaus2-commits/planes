@@ -6,7 +6,7 @@
 const SHEET_ID = '1wCANuHk3XOe82WimgyrtTbhEKKKeaomsKRY_aTmf4h0';
 const HOJA = 'Planes';
 const CLAVE = 'TU_CLAVE'; // la real está solo en el proyecto de Apps Script
-const COLS = ['id', 'titulo', 'descripcion', 'links', 'fecha', 'presupuesto', 'total', 'actualizado', 'participantes'];
+const COLS = ['id', 'titulo', 'descripcion', 'links', 'fecha', 'presupuesto', 'total', 'actualizado', 'participantes', 'parking'];
 
 function doGet(e) {
   return responder(e && e.parameter ? e.parameter : {});
@@ -60,7 +60,8 @@ function filaAPlan(f) {
     fecha: f[4],
     presupuesto: textoAPresupuesto(f[5]),
     actualizado: f[7],
-    participantes: f[8] ? f[8].split('\n').map(s => s.trim()).filter(Boolean) : []
+    participantes: f[8] ? f[8].split('\n').map(s => s.trim()).filter(Boolean) : [],
+    parking: f[9] || ''
   };
 }
 
@@ -99,7 +100,8 @@ function guardar(hoja, plan) {
     presupuestoATexto(presupuesto),
     presupuesto.length ? total : '',
     ahora,
-    (plan.participantes || []).map(s => String(s).replace(/\n/g, ' ').trim()).filter(Boolean).join('\n')
+    (plan.participantes || []).map(s => String(s).replace(/\n/g, ' ').trim()).filter(Boolean).join('\n'),
+    String(plan.parking || '').replace(/\n/g, ' ').trim()
   ];
 
   const r = buscarFila(hoja, id);
