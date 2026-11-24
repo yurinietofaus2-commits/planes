@@ -132,6 +132,26 @@
          </div>`
       : '';
 
+    const gente = (p.participantes || []);
+    const people = gente.length
+      ? `<div class="people" title="Participantes">
+           ${gente.map(n => `<span class="person"><span class="avatar" style="--h:${hue(n)}">${esc(iniciales(n))}</span>${esc(n)}</span>`).join('')}
+         </div>`
+      : '';
+
+    const cal = d
+      ? `<div class="cal">
+           <button type="button" class="calbtn" data-cal="${esc(p.id)}" aria-expanded="false">
+             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M12 13v5M9.5 15.5h5"/></svg>
+             Añadir al calendario
+           </button>
+           <div class="calmenu" hidden>
+             <a href="${esc(urlGoogle(p))}" target="_blank" rel="noopener noreferrer">Google Calendar</a>
+             <button type="button" data-ics="${esc(p.id)}">Apple / Outlook (.ics)</button>
+           </div>
+         </div>`
+      : '';
+
     return `<article class="${cls}" data-id="${esc(p.id)}">
       <div class="card__head">
         ${datebox}
@@ -144,10 +164,103 @@
         <svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>
       </button>
       ${p.descripcion ? `<p class="card__desc">${esc(p.descripcion)}</p>` : ''}
+      ${people}
       ${links ? `<div class="links">${links}</div>` : ''}
       ${budget}
+      ${cal}
     </article>`;
   }
+
+  /* ---------- participantes: utilidades ---------- */
+  function iniciales(n) {
+    const p = String(n).trim().split(/\s+/);
+    return ((p[0] || '')[0] || '').toUpperCase() + ((p[1] || '')[0] || '').toUpperCase();
+  }
+  function hue(n) {
+    let h = 0;
+    for (const c of String(n).toLowerCase()) h = (h * 31 + c.charCodeAt(0)) % 360;
+    return h;
+  }
+
+  /* ---------- calendario ---------- */
+  const yyyymmdd = d => d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+  function rangoDia(p) {
+    const d = parseFecha(p.fecha);
+    const sig = new Date(d); sig.setDate(sig.getDate() + 1);
+    return [yyyymmdd(d), yyyymmdd(sig)];
+  }
+  function detallesEvento(p) {
+    const partes = [];
+    if (p.descripcion) partes.push(p.descripcion);
+    if ((p.participantes || []).length) partes.push('Participantes: ' + p.participantes.join(', '));
+    const ls = (p.links || []).map(normalizaUrl).filter(Boolean);
+    if (ls.length) partes.push('Enlaces:\n' + ls.join('\n'));
+    const tot = (p.presupuesto || []).reduce((s, g) => s + (Number(g.importe) || 0), 0);
+    if (tot) partes.push('Presupuesto estimado: ' + eur(tot));
+    return partes.join('\n\n');
+  }
+  function urlGoogle(p) {
+    const [a, b] = rangoDia(p);
+    const q = new URLSearchParams({ action: 'TEMPLATE', text: p.titulo || 'Plan', dates: `${a}/${b}`, details: detallesEvento(p) });
+    return 'https://calendar.google.com/calendar/render?' + q.toString();
+  }
+  function icsEsc(s) { return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+  function icsFold(line) {
+    const out = [];
+    while (line.length > 72) { out.push(line.slice(0, 72)); line = ' ' + line.slice(72); }
+    out.push(line);
+    return out.join('\r\n');
+  }
+  function descargarIcs(p) {
+    const [a, b] = rangoDia(p);
+    const ahora = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+    const lineas = [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Planes//ES', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `UID:${p.id}@planes`,
+      `DTSTAMP:${ahora}`,
+      `DTSTART;VALUE=DATE:${a}`,
+      `DTEND;VALUE=DATE:${b}`,
+      `SUMMARY:${icsEsc(p.titulo || 'Plan')}`,
+      `DESCRIPTION:${icsEsc(detallesEvento(p))}`,
+      'END:VEVENT', 'END:VCALENDAR'
+    ].map(icsFold).join('\r\n');
+    const blob = new Blob([lineas], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const el = document.createElement('a');
+    el.href = url;
+    el.download = (p.titulo || 'plan').replace(/[\\/:*?"<>|]+/g, '').slice(0, 60) + '.ics';
+    document.body.appendChild(el);
+    el.click();
+    el.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+  function cerrarMenusCal(excepto) {
+    document.querySelectorAll('.calmenu').forEach(m => {
+      if (m === excepto) return;
+      m.hidden = true;
+      m.previousElementSibling.setAttribute('aria-expanded', 'false');
+    });
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-cal]');
+    if (b) {
+      const m = b.nextElementSibling;
+      cerrarMenusCal(m);
+      m.hidden = !m.hidden;
+      b.setAttribute('aria-expanded', String(!m.hidden));
+      return;
+    }
+    const ics = e.target.closest('[data-ics]');
+    if (ics) {
+      const p = planes.find(x => x.id === ics.dataset.ics);
+      if (p) descargarIcs(p);
+      cerrarMenusCal();
+      return;
+    }
+    if (e.target.closest('.calmenu a')) { setTimeout(cerrarMenusCal, 0); return; }
+    if (!e.target.closest('.cal')) cerrarMenusCal();
+  });
 
   function render() {
     const { prox, sin, pas } = ordenar(planes);
@@ -267,6 +380,38 @@
     else filaGasto(c).querySelector('.importe input').focus();
   });
 
+  /* participantes en el formulario */
+  let personas = [];
+  function pintarPersonas() {
+    $('#people').innerHTML = personas.map((n, i) =>
+      `<span class="person person--edit"><span class="avatar" style="--h:${hue(n)}">${esc(iniciales(n))}</span>${esc(n)}
+         <button type="button" data-quitar-persona="${i}" aria-label="Quitar ${esc(n)}">×</button></span>`).join('');
+    const usados = new Set(personas.map(n => n.toLowerCase()));
+    const conocidos = new Map();
+    planes.forEach(p => (p.participantes || []).forEach(n => { if (!usados.has(n.toLowerCase())) conocidos.set(n.toLowerCase(), n); }));
+    $('#peopleSuggest').innerHTML = [...conocidos.values()].sort((a, b) => a.localeCompare(b, 'es'))
+      .map(n => `<button type="button" class="pick" data-sugerida="${esc(n)}">＋ ${esc(n)}</button>`).join('');
+  }
+  function añadirPersona(texto) {
+    String(texto || '').split(',').map(t => t.trim().replace(/\s+/g, ' ')).filter(Boolean).forEach(n => {
+      if (!personas.some(x => x.toLowerCase() === n.toLowerCase())) personas.push(n.slice(0, 40));
+    });
+    $('#inPersona').value = '';
+    pintarPersonas();
+  }
+  $('#inPersona').addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); añadirPersona(e.target.value); }
+  });
+  $('#btnAddPersona').onclick = () => { añadirPersona($('#inPersona').value); $('#inPersona').focus(); };
+  $('#people').addEventListener('click', e => {
+    const b = e.target.closest('[data-quitar-persona]');
+    if (b) { personas.splice(Number(b.dataset.quitarPersona), 1); pintarPersonas(); }
+  });
+  $('#peopleSuggest').addEventListener('click', e => {
+    const b = e.target.closest('[data-sugerida]');
+    if (b) añadirPersona(b.dataset.sugerida);
+  });
+
   $('#btnAddLink').onclick = () => filaLink().querySelector('input').focus();
   $('#btnSinFecha').onclick = () => { $('#inFecha').value = ''; };
 
@@ -286,6 +431,9 @@
       (plan.links || []).forEach(l => filaLink(l));
       (plan.presupuesto || []).forEach(g => filaGasto(g.concepto, g.importe, !CONCEPTOS.some(c => c.n.toLowerCase() === g.concepto.toLowerCase())));
     }
+    personas = plan ? [...(plan.participantes || [])] : [];
+    $('#inPersona').value = '';
+    pintarPersonas();
     if (!$('#links').children.length) filaLink();
     syncPicks(); calcTotal();
     dlg.showModal();
@@ -308,9 +456,10 @@
       descripcion: form.descripcion.value.trim(),
       fecha: form.fecha.value,
       links: [...$('#links').querySelectorAll('input')].map(i => normalizaUrl(i.value)).filter(Boolean),
-      presupuesto: leerGastos()
+      presupuesto: leerGastos(),
+      participantes: (añadirPersona($('#inPersona').value), [...personas])
     };
-    if (!plan.titulo && !plan.descripcion && !plan.fecha && !plan.links.length && !plan.presupuesto.length) {
+    if (!plan.titulo && !plan.descripcion && !plan.fecha && !plan.links.length && !plan.presupuesto.length && !plan.participantes.length) {
       toast('Escribe al menos algo del plan', true);
       return;
     }

@@ -125,10 +125,9 @@ section[hidden] { display: none; }
   padding: 18px 18px 16px;
   display: flex; flex-direction: column; gap: 12px;
   animation: aparecer .35s ease both;
-  overflow: hidden;
 }
 .card::before { /* franja superior tipo cinta */
-  content: ""; position: absolute; inset: 0 0 auto 0; height: 5px;
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; border-radius: var(--radius) var(--radius) 0 0;
   background: linear-gradient(90deg, var(--moss), var(--sage));
 }
 .card--sinfecha::before { background: repeating-linear-gradient(90deg, var(--sand-dark) 0 10px, var(--sand) 10px 20px); }
@@ -180,6 +179,53 @@ section[hidden] { display: none; }
 .chip b { color: var(--forest); font-weight: 700; }
 .chip i { font-style: normal; }
 .budget__total { margin-left: auto; font: 700 17px var(--serif); color: var(--forest); }
+
+/* ---------- participantes ---------- */
+.people, .people-edit { display: flex; flex-wrap: wrap; gap: 6px; }
+.people-edit:empty { display: none; }
+.person {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px 3px 3px; border-radius: 99px;
+  background: #fff; border: 1px solid var(--line);
+  font-size: 13.5px; font-weight: 600; color: #4a473d;
+}
+.avatar {
+  width: 22px; height: 22px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  font: 700 10.5px var(--sans); letter-spacing: .02em; color: #fff;
+  background: hsl(var(--h, 120) 28% 46%);
+}
+.person--edit { padding-right: 4px; }
+.person--edit button {
+  width: 22px; height: 22px; border-radius: 50%; border: 0; background: transparent;
+  color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer;
+}
+.person--edit button:hover { background: #f6e1da; color: var(--danger); }
+#peopleSuggest:empty { display: none; }
+
+/* ---------- añadir al calendario ---------- */
+.cal { position: relative; margin-top: 2px; }
+.calbtn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: transparent; border: 1.5px solid var(--sand-dark); border-radius: 99px;
+  padding: 6px 13px 6px 10px; color: var(--moss);
+  font: 700 13.5px var(--sans); cursor: pointer; transition: background .15s;
+}
+.calbtn:hover, .calbtn[aria-expanded="true"] { background: var(--sage-soft); border-color: var(--sage); }
+.calbtn svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; }
+.calmenu {
+  position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 5;
+  min-width: 220px; padding: 6px;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 14px 30px -12px rgba(30,40,30,.35);
+  display: flex; flex-direction: column;
+}
+.calmenu a, .calmenu button {
+  display: block; text-align: left; width: 100%;
+  padding: 10px 12px; border-radius: 9px; border: 0; background: transparent;
+  font: 600 14px var(--sans); color: var(--ink); text-decoration: none; cursor: pointer;
+}
+.calmenu a:hover, .calmenu button:hover { background: var(--sage-soft); color: var(--forest); }
 
 /* ---------- vacío / estado ---------- */
 .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
@@ -266,3 +312,4 @@ input[type=date] { max-width: 220px; accent-color: var(--moss); }
   #btnNuevo { width: 100%; justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.card:has(.calmenu:not([hidden])) { z-index: 6; }
