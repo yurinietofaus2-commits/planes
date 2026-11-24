@@ -139,6 +139,15 @@
          </div>`
       : '';
 
+    const park = String(p.parking || '').trim();
+    const parking = park
+      ? `<a class="parking" href="${esc(urlMapa(park))}" target="_blank" rel="noopener noreferrer" title="Abrir en el mapa">
+           <span class="parking__p">P</span>
+           <span class="parking__txt"><b>Parking</b><span>${esc(etiquetaParking(park))}</span></span>
+           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+         </a>`
+      : '';
+
     const cal = d
       ? `<div class="cal">
            <button type="button" class="calbtn" data-cal="${esc(p.id)}" aria-expanded="false">
@@ -165,6 +174,7 @@
       </button>
       ${p.descripcion ? `<p class="card__desc">${esc(p.descripcion)}</p>` : ''}
       ${people}
+      ${parking}
       ${links ? `<div class="links">${links}</div>` : ''}
       ${budget}
       ${cal}
@@ -182,6 +192,20 @@
     return h;
   }
 
+  /* ---------- parking: utilidades ---------- */
+  const esUrl = t => /^https?:\/\//i.test(t) || /^(www\.|maps\.|goo\.gl\/)/i.test(t);
+  const esCoord = t => /^-?\d{1,2}(\.\d+)?\s*,\s*-?\d{1,3}(\.\d+)?$/.test(t);
+  function urlMapa(t) {
+    t = t.trim();
+    if (esUrl(t)) return normalizaUrl(t);
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(t.replace(/\s*,\s*/g, esCoord(t) ? ',' : ', '));
+  }
+  function etiquetaParking(t) {
+    if (esUrl(t)) return 'Ver ubicación en el mapa';
+    if (esCoord(t)) return t.split(',').map(x => Number(x).toFixed(5)).join(', ');
+    return t;
+  }
+
   /* ---------- calendario ---------- */
   const yyyymmdd = d => d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
   function rangoDia(p) {
@@ -193,15 +217,21 @@
     const partes = [];
     if (p.descripcion) partes.push(p.descripcion);
     if ((p.participantes || []).length) partes.push('Participantes: ' + p.participantes.join(', '));
+    if (p.parking) partes.push('Parking: ' + urlMapa(p.parking));
     const ls = (p.links || []).map(normalizaUrl).filter(Boolean);
     if (ls.length) partes.push('Enlaces:\n' + ls.join('\n'));
     const tot = (p.presupuesto || []).reduce((s, g) => s + (Number(g.importe) || 0), 0);
     if (tot) partes.push('Presupuesto estimado: ' + eur(tot));
     return partes.join('\n\n');
   }
+  function ubicacionEvento(p) {
+    const t = String(p.parking || '').trim();
+    return esUrl(t) ? normalizaUrl(t) : 'Parking: ' + t;
+  }
   function urlGoogle(p) {
     const [a, b] = rangoDia(p);
     const q = new URLSearchParams({ action: 'TEMPLATE', text: p.titulo || 'Plan', dates: `${a}/${b}`, details: detallesEvento(p) });
+    if (p.parking) q.set('location', ubicacionEvento(p));
     return 'https://calendar.google.com/calendar/render?' + q.toString();
   }
   function icsEsc(s) { return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
@@ -223,6 +253,7 @@
       `DTEND;VALUE=DATE:${b}`,
       `SUMMARY:${icsEsc(p.titulo || 'Plan')}`,
       `DESCRIPTION:${icsEsc(detallesEvento(p))}`,
+      ...(p.parking ? [`LOCATION:${icsEsc(ubicacionEvento(p))}`] : []),
       'END:VEVENT', 'END:VCALENDAR'
     ].map(icsFold).join('\r\n');
     const blob = new Blob([lineas], { type: 'text/calendar;charset=utf-8' });
@@ -412,6 +443,19 @@
     if (b) añadirPersona(b.dataset.sugerida);
   });
 
+  $('#btnMiUbicacion').onclick = () => {
+    const b = $('#btnMiUbicacion');
+    if (!navigator.geolocation) { toast('Este navegador no permite obtener la ubicación', true); return; }
+    b.disabled = true;
+    navigator.geolocation.getCurrentPosition(pos => {
+      $('#inParking').value = pos.coords.latitude.toFixed(6) + ', ' + pos.coords.longitude.toFixed(6);
+      b.disabled = false;
+    }, () => {
+      toast('No se pudo obtener tu ubicación', true);
+      b.disabled = false;
+    }, { enableHighAccuracy: true, timeout: 15000 });
+  };
+
   $('#btnAddLink').onclick = () => filaLink().querySelector('input').focus();
   $('#btnSinFecha').onclick = () => { $('#inFecha').value = ''; };
 
@@ -428,6 +472,7 @@
       form.titulo.value = plan.titulo || '';
       form.descripcion.value = plan.descripcion || '';
       form.fecha.value = plan.fecha || '';
+      form.parking.value = plan.parking || '';
       (plan.links || []).forEach(l => filaLink(l));
       (plan.presupuesto || []).forEach(g => filaGasto(g.concepto, g.importe, !CONCEPTOS.some(c => c.n.toLowerCase() === g.concepto.toLowerCase())));
     }
@@ -457,9 +502,10 @@
       fecha: form.fecha.value,
       links: [...$('#links').querySelectorAll('input')].map(i => normalizaUrl(i.value)).filter(Boolean),
       presupuesto: leerGastos(),
-      participantes: (añadirPersona($('#inPersona').value), [...personas])
+      participantes: (añadirPersona($('#inPersona').value), [...personas]),
+      parking: form.parking.value.trim()
     };
-    if (!plan.titulo && !plan.descripcion && !plan.fecha && !plan.links.length && !plan.presupuesto.length && !plan.participantes.length) {
+    if (!plan.titulo && !plan.descripcion && !plan.fecha && !plan.links.length && !plan.presupuesto.length && !plan.participantes.length && !plan.parking) {
       toast('Escribe al menos algo del plan', true);
       return;
     }

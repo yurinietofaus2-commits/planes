@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
   <div class="paper"></div>
@@ -110,6 +110,17 @@
         </div>
 
         <div class="field">
+          <span>Ubicación del parking</span>
+          <div class="row">
+            <input type="text" name="parking" id="inParking" placeholder="Dirección, coordenadas o enlace de Google Maps" maxlength="500" autocomplete="off">
+            <button type="button" class="btn btn--ghost btn--sm" id="btnMiUbicacion" title="Usar mi ubicación actual">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>
+              Aquí
+            </button>
+          </div>
+        </div>
+
+        <div class="field">
           <span>Enlaces de actividades</span>
           <div id="links" class="links-edit"></div>
           <button type="button" class="btn btn--ghost btn--sm" id="btnAddLink">
@@ -158,7 +169,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="config.js?v=4"></script>
-  <script src="app.js?v=4"></script>
+  <script src="config.js?v=5"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>
