@@ -148,7 +148,7 @@ section[hidden] { display: none; }
 .datebox--none { display: grid; place-items: center; height: 66px; background: var(--cream); border-style: dashed; border-color: var(--sand-dark); }
 .datebox--none svg { width: 26px; height: 26px; stroke: var(--sand-dark); fill: none; stroke-width: 2; }
 
-.card__titles { flex: 1; min-width: 0; }
+.card__titles { flex: 1; min-width: 0; padding-right: 30px; }
 .card__title { font: 600 19px/1.25 var(--serif); margin: 2px 0 4px; color: var(--ink); overflow-wrap: anywhere; }
 .card__title--empty { color: var(--muted); font-style: italic; font-weight: 400; }
 .when { display: inline-block; font-size: 13px; font-weight: 700; color: var(--moss); background: var(--sage-soft); border-radius: 99px; padding: 1px 9px; }
