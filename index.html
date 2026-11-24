@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Planes · Cuaderno de salidas</title>
+  <meta name="theme-color" content="#3d5c45">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23f3ecdc'/%3E%3Cpath d='M8 48 L24 24 L32 36 L40 22 L56 48 Z' fill='%233d5c45'/%3E%3Ccircle cx='46' cy='16' r='5' fill='%23c9773f'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="paper"></div>
+
+  <header class="top">
+    <div class="wrap top__inner">
+      <div class="brand">
+        <svg class="brand__mark" viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M4 50 L22 22 L31 35 L41 18 L60 50 Z" fill="currentColor"/>
+          <path d="M37 25 L41 18 L45 25 L42 23 L41 26 L39 23 Z" fill="#f3ecdc"/>
+          <circle cx="50" cy="13" r="5" fill="#c9773f"/>
+        </svg>
+        <div>
+          <h1>Planes</h1>
+          <p class="brand__sub">Cuaderno de salidas y escapadas</p>
+        </div>
+      </div>
+      <button class="btn btn--primary" id="btnNuevo" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Nuevo plan
+      </button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="status" id="status" hidden></div>
+
+    <section id="secProximos">
+      <h2 class="sec-title"><span>Próximos</span></h2>
+      <div class="grid" id="gridProximos"></div>
+    </section>
+
+    <section id="secSinFecha">
+      <h2 class="sec-title"><span>Sin fecha</span></h2>
+      <div class="grid" id="gridSinFecha"></div>
+    </section>
+
+    <section id="secPasados">
+      <details class="pasados">
+        <summary class="sec-title"><span>Ya vividos</span><small id="numPasados"></small></summary>
+        <div class="grid" id="gridPasados"></div>
+      </details>
+    </section>
+
+    <div class="empty" id="empty" hidden>
+      <svg viewBox="0 0 120 80" aria-hidden="true">
+        <path d="M5 70 L38 28 L55 50 L75 20 L115 70 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M5 70 H115" stroke="currentColor" stroke-width="2.5"/>
+        <circle cx="95" cy="18" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/>
+      </svg>
+      <p>Todavía no hay planes. ¿A dónde vamos?</p>
+      <button class="btn btn--primary" type="button" data-nuevo>Apuntar el primero</button>
+    </div>
+  </main>
+
+  <footer class="foot wrap">
+    <span>Datos guardados en Google Sheets</span>
+    <button class="linkbtn" id="btnSalir" type="button">Cambiar clave</button>
+  </footer>
+
+  <!-- Formulario -->
+  <dialog id="dlgPlan" class="dlg">
+    <form id="formPlan" method="dialog" autocomplete="off">
+      <header class="dlg__head">
+        <h2 id="dlgTitulo">Nuevo plan</h2>
+        <button type="button" class="iconbtn" data-cerrar aria-label="Cerrar">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+
+      <div class="dlg__body">
+        <label class="field">
+          <span>Título</span>
+          <input name="titulo" type="text" placeholder="Ruta por el Hayedo de Montejo" maxlength="140">
+        </label>
+
+        <label class="field">
+          <span>Descripción</span>
+          <textarea name="descripcion" rows="3" placeholder="Qué haremos, con quién, qué llevar…"></textarea>
+        </label>
+
+        <div class="field">
+          <span>Fecha</span>
+          <div class="fecha-row">
+            <input name="fecha" type="date" id="inFecha">
+            <button type="button" class="linkbtn" id="btnSinFecha">Sin fecha</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <span>Enlaces de actividades</span>
+          <div id="links" class="links-edit"></div>
+          <button type="button" class="btn btn--ghost btn--sm" id="btnAddLink">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Añadir enlace
+          </button>
+        </div>
+
+        <div class="field">
+          <span>Presupuesto</span>
+          <div class="chips-pick" id="chipsPick"></div>
+          <div id="gastos" class="gastos"></div>
+          <div class="total-row" id="totalRow" hidden>
+            <span>Total estimado</span><strong id="totalForm">0 €</strong>
+          </div>
+        </div>
+      </div>
+
+      <footer class="dlg__foot">
+        <button type="button" class="btn btn--danger-ghost" id="btnBorrar" hidden>Borrar</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn--ghost" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn--primary" id="btnGuardar">Guardar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Clave -->
+  <dialog id="dlgClave" class="dlg dlg--small">
+    <form id="formClave" method="dialog">
+      <div class="dlg__body">
+        <h2>Entrar al cuaderno</h2>
+        <p class="muted">Escribe la clave de acceso. Se recordará en este navegador.</p>
+        <label class="field">
+          <span>Clave</span>
+          <input name="clave" type="password" required autocomplete="current-password">
+        </label>
+        <p class="error" id="claveError" hidden>Clave incorrecta.</p>
+      </div>
+      <footer class="dlg__foot">
+        <span class="spacer"></span>
+        <button type="submit" class="btn btn--primary">Entrar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
